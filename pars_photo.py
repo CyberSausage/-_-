@@ -61,7 +61,7 @@ class Client:
 
                     else:
                         if mess_photo.photo:
-                            await self.session.download_media(mess_photo, file=f"{title}/{mess_photo.id}.png")
+                            await self.session.download_media(mess_photo, file=f"photo captch/{title}/{mess_photo.id}.png")
 
 
             await asyncio.sleep(3)
