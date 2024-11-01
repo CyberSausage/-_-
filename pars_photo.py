@@ -60,7 +60,7 @@ class Client:
                         print(mess_photo)
 
                     else:
-                        if mess_photo.photo:
+                        if mess_photo.photo and mess_photo.photo.sizes[0].size > 49:
                             await self.session.download_media(mess_photo, file=f"photo captch/{title}/{mess_photo.id}.png")
 
 
