@@ -2,9 +2,7 @@
 import asyncio
 
 from pars_photo import Client
-
-from skimage.metrics import structural_similarity as ssim
-import cv2
+from comparison_model import Similarity_Model
 
 import os, shutil
 
@@ -13,6 +11,8 @@ class Train(Client):
     def __init__(self):
 
         super().__init__()
+
+        self.model = Similarity_Model()
 
         self.offset_id = None
 
@@ -40,9 +40,9 @@ class Train(Client):
 
             for mes in self.messages:
 
-                #try:
+                try:
                     if mes.photo:
-                        path = f"{self.name_main_folder} test/карантин/{mes.id}.png"
+                        path = f"{self.name_main_folder} test2/карантин/{mes.id}.png"
                         await self.session.download_media(mes, file=path)
 
                         self.list_value = {}
@@ -56,41 +56,23 @@ class Train(Client):
 
                             for img in images:
 
-                                summ += self.compare(f"{path_folder}/{img}", path)
-
+                                summ += self.model.compare(path, f"{path_folder}/{img}")
+                                print(f"{path_folder}/{img}  ||  {path}")
 
                             self.list_value[folder] = summ / len(images)
 
-                        print(self.list_value)
 
                         max_key = max(self.list_value, key=self.list_value.get)
 
-                        destination_folder = f"{self.name_main_folder} test/{max_key}"
-                        print(destination_folder)
+                        destination_folder = f"{self.name_main_folder} test2/{max_key}"
+
                         os.makedirs(destination_folder, exist_ok=True)
 
                         destination = os.path.join(destination_folder, os.path.basename(path))
                         shutil.move(path, destination)
 
-                #except Exception as exc:
-                #    print(exc)
-
-
-    def compare(self, path_img1, path_img2):
-
-        print(f"{path_img1}  ||  {path_img2}")
-
-        img1 = cv2.imread(path_img1)
-        img2 = cv2.imread(path_img2)
-
-        img2_resized = cv2.resize(img2, (img1.shape[1], img1.shape[0]))
-
-        gray_img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
-        gray_img2 = cv2.cvtColor(img2_resized, cv2.COLOR_BGR2GRAY)
-
-        similarity, _ = ssim(gray_img1, gray_img2, full=True)
-
-        return similarity if similarity > 0 else 0
+                except Exception as exc:
+                    print(exc)
 
 
 if __name__ == "__main__":
