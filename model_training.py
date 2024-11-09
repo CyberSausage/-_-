@@ -52,15 +52,15 @@ class Train(Client):
                             path_folder = f"{self.name_main_folder}/{folder}"
                             images = os.listdir(path_folder)
 
-                            summ = 0
+                            array_similarity = []
 
                             for img in images:
 
-                                summ += self.model.compare(path, f"{path_folder}/{img}")
-                                print(f"{path_folder}/{img}  ||  {path}")
+                                array_similarity.append(self.model.compare(path, f"{path_folder}/{img}"))
+                                print(f"{count} | {path_folder}/{img}  ||  {path}")
 
-                            self.list_value[folder] = summ / len(images)
-
+                            self.list_value[folder] = sum(sorted(array_similarity, reverse=True)[:3]) / 3
+                            print(self.list_value[folder])
 
                         max_key = max(self.list_value, key=self.list_value.get)
 
