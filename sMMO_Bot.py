@@ -1,3 +1,5 @@
+import os
+
 from colorama import init, Fore, Back, Style
 
 import requests as rq
@@ -10,6 +12,8 @@ import random
 
 from All_Token import token, api_token
 from All_Headers import main_headers, photo_headers, base_headers
+
+from comparison_model import Similarity_Model
 
 from googletrans import Translator
 
@@ -34,7 +38,7 @@ class Bot_sMMO_cl:
 
         self.url_steps = "https://api.simple-mmo.com/api/action/travel/4"
         self.url_attack_npc = "/434g3s"
-        self.url_materials = "https://web.simple-mmo.com/api" # /crafting/material/gather/151468913?new_page=true
+        self.url_materials = "https://web.simple-mmo.com/api"
         self.url_quest = "https://web.simple-mmo.com/quests/viewall"
         self.url_bank_dep = "https://web.simple-mmo.com/bank/deposit/submit"
 
@@ -43,6 +47,10 @@ class Bot_sMMO_cl:
         self.count_kill_npc = 0
         self.count_materials = 0
         self.count_materials_output = {"Common": 0, "Uncommon": 0, "Rare": 0, "Elite": 0, "Epic": 0, "Legendary": 0, "Celestial": 0}
+
+        self.count_attempt = 0
+
+        self.sim_model = Similarity_Model()
 
         self.stop_event = threading.Event()
 
@@ -53,7 +61,11 @@ class Bot_sMMO_cl:
             bs = BeautifulSoup(answer.text, 'lxml')
             title_question = bs.find(class_="text-2xl text-gray-800 font-semibold").get_text()
 
-            result = translator.translate(title_question, src='en', dest='ru')
+            try:
+                result = translator.translate(title_question, src='en', dest='ru')
+
+            except Exception as e:
+                print("Ошибка при переводе:", e)
 
             mass_address_verification = bs.find_all(attrs={":class": "{'opacity-40':loading}"})
 
@@ -64,26 +76,59 @@ class Bot_sMMO_cl:
                 with open(f'generate_image_uid_{i}.png', 'wb') as file:
                     file.write(response.content)
 
+            if self.count_attempt == 2:
+                end_bot = self.people_choose(result, mass_address_verification)
 
+            else:
+                end_bot = self.model_choose(result, mass_address_verification)
 
-            self.self_main_class.send_photos(result.text)
-
-            for i in list(self.count_materials_output.keys()):
-                self.count_materials_output[i] = 0
-
-            while self.self_main_class.kapcha_number is None:
-                time.sleep(5)
-
-            end_bot = mass_address_verification[int(self.self_main_class.kapcha_number) - 1].get('x-on:click').split("'")[1]
             not_bot_responce = rq.post("https://web.simple-mmo.com/api/bot-verification", headers=self.headers, data={"data": end_bot, "valid": "false", "x": self.get_rand(400, 700), "y": self.get_rand(350, 410)})
 
-            self.self_main_class.kapcha_number = None
-
             print(Fore.GREEN + not_bot_responce.json()['title'])
+
+            if not_bot_responce.json()['title'].find("woops") == -1:
+                self.count_attempt = 0
+            else:
+                self.count_attempt += 1
 
             return True
 
         return False
+
+    def model_choose(self, result, mass_addr_ver):
+        name_dir = f"photo captch test/{result.text}"
+        list_photo = os.listdir(name_dir)
+        list_similarity = {0: [], 1: [], 2: [], 3: []}
+
+        for i in range(0, 4):
+
+            for img in list_photo:
+                print(img)
+                list_similarity[i].append(self.sim_model.compare(f"{name_dir}/{img}", f"generate_image_uid_{i}.png"))
+
+            medium_sim = sum(sorted(list_similarity[i], reverse=True)[:10]) / 10
+            list_similarity[i].clear()
+            list_similarity[i] = medium_sim
+
+        end_bot = mass_addr_ver[int(max(list_similarity, key=list_similarity.get))].get('x-on:click').split("'")[1]
+        print(result.text, max(list_similarity, key=list_similarity.get))
+        return end_bot
+
+
+    def people_choose(self, result, mass_addr_ver):
+        self.self_main_class.send_photos(result.text)
+
+        for i in list(self.count_materials_output.keys()):
+            self.count_materials_output[i] = 0
+
+        while self.self_main_class.kapcha_number is None:
+            time.sleep(5)
+
+        end_bot = mass_addr_ver[int(self.self_main_class.kapcha_number) - 1].get('x-on:click').split("'")[1]
+
+        self.self_main_class.kapcha_number = None
+
+        return end_bot
 
     def main_run(self):
         while not self.stop_event.is_set():
@@ -134,7 +179,7 @@ class Bot_sMMO_cl:
                 elif (answer['step_type'] == 'player'):
                     print(f"Опыт: {self.count_exp_amount:<6}  |  Золото: {self.count_gold_amount:<6}  |  NPC: {self.count_kill_npc:<6}")
 
-                time.sleep(self.get_rand(5.00001, 5.25))
+                time.sleep(self.get_rand(5.00001, 6.1))
 
             except Exception as e:
                 print(e)
@@ -163,7 +208,7 @@ class Bot_sMMO_cl:
     def materials(self, number_material, rare):
         requerst = ""
         requerst = rq.post(f"{self.url_materials}{number_material}", headers=base_headers, data={"_token": self.token})
-        time.sleep(0.5)
+        time.sleep(0.9)
 
         try:
             self.count_materials += 1

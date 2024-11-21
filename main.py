@@ -81,7 +81,6 @@ class Tg_Bot(telebot.TeleBot):
         self.send_message(self.chat_id, text=title, reply_markup=keyboard)
 
     def callback_query(self, message):
-        print("work")
         self.kapcha_number = message.text
 
         keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
