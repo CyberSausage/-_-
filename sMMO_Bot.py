@@ -11,7 +11,7 @@ import re
 import random
 
 from All_Token import token, api_token
-from All_Headers import main_headers, photo_headers, base_headers
+from All_Headers import main_headers, photo_headers, base_headers, base_headers_material
 
 from comparison_model import Similarity_Model
 
@@ -32,7 +32,7 @@ class Bot_sMMO_cl:
 
         self.headers = main_headers
 
-        self.url = "https://api.simple-mmo.com/api"
+        self.url = "https://api.simple-mmo.com/api/"
 
         self.url_i_am_not_a_bot = f"https://web.simple-mmo.com/i-am-not-a-bot?new_page=true"
 
@@ -96,7 +96,7 @@ class Bot_sMMO_cl:
         return False
 
     def model_choose(self, result, mass_addr_ver):
-        name_dir = f"photo captch test/{result.text}"
+        name_dir = f"photo captch test2/{result.text}"
         list_photo = os.listdir(name_dir)
         list_similarity = {0: [], 1: [], 2: [], 3: []}
 
@@ -137,9 +137,13 @@ class Bot_sMMO_cl:
     def stop(self):
         self.stop_event.set()
 
+    def normalize_url(self, raw_url):
+        cleaned_url = raw_url.replace("\\", "").replace("u0026", "&")
+
+        return cleaned_url
+
     def req_step(self):
         answer = rq.post(self.url_steps, headers=base_headers, data={"_token": self.token, "api_token": self.api_token, "d_1": self.get_rand(446, 687), "d_2": self.get_rand(394, 423), "s": "false", "travel_id": 0})
-
         if answer.status_code == 200:
             try:
                 answer = answer.json()
@@ -158,7 +162,7 @@ class Bot_sMMO_cl:
 
                 elif (answer['step_type'] == 'npc'):
                     rq.get(self.url.replace("api/", "").replace("api", "web") + answer['text'].split("href='")[1].split("'")[0], headers=base_headers)
-                    type_attack = self.attack_npc(answer['text'].split("href='")[1].split("?")[0])
+                    type_attack = self.attack_npc(answer['text'].split("href='")[1].split("?")[0].replace("/n", "n"))
                     self.count_kill_npc += 1
                     print(Fore.RED + f"{type_attack}:  {answer['text'].split('>')[3].split('<')[0]}  |  {answer['heading']}")
 
@@ -171,24 +175,27 @@ class Bot_sMMO_cl:
 
 
                     else:
-                        rq.get(self.url.replace("api/", "").replace("api", "web") + answer['text'].split("location='")[1].split("'")[0], headers=base_headers)
-                        type_work = self.materials(answer['text'].split("location='")[1].split("?")[0], answer["text"].split(">")[3].split("<")[0])
+                        url_material_gather = rq.get(self.url.replace("api/", "").replace("api", "web") + answer['text'].split("location='")[1].split("'")[0], headers=base_headers).text
+                        url_material_gather = url_material_gather.split('game_data.push')[1].split('"')[3]
+
+                        id_room = answer['text'].split("location='")[1].split("/")[4].split("?")[0]
+
+                        type_work = self.materials(self.normalize_url(url_material_gather), id_room, answer["text"].split(">")[3].split("<")[0])
                         print(Fore.CYAN + f"{type_work}:  {answer['heading']}   material  х{self.count_materials}   {answer['text'].split('>')[3].split('<')[0]}")
                         self.count_materials = 0
 
                 elif (answer['step_type'] == 'player'):
                     print(f"Опыт: {self.count_exp_amount:<6}  |  Золото: {self.count_gold_amount:<6}  |  NPC: {self.count_kill_npc:<6}")
 
-                time.sleep(self.get_rand(5.00001, 6.1))
+                time.sleep(self.get_rand(6.00001, 8))
 
             except Exception as e:
-                print(e)
+                print(e, "req_step")
                 return None
 
     def attack_npc(self, number_npc):
         try:
             attack_npc = rq.post(self.url + number_npc + self.url_attack_npc, headers=base_headers, data={"_token": self.token, "api_token": self.api_token, "special_attack": "false"}).json()
-
             if (attack_npc['type'] == "error"):
                 self.i_am_not_a_bot(attack_npc['result'])
                 attack_npc = rq.post(self.url + number_npc + self.url_attack_npc, headers=self.headers,
@@ -205,23 +212,23 @@ class Bot_sMMO_cl:
         except:
             return self.attack_npc(number_npc)
 
-    def materials(self, number_material, rare):
-        requerst = ""
-        requerst = rq.post(f"{self.url_materials}{number_material}", headers=base_headers, data={"_token": self.token})
+    def materials(self, url_gather, id_room, rare):
+        request = ""
+        request = rq.post(url_gather, headers=base_headers_material, data={"id": int(id_room), "quantity": 1})
         time.sleep(0.9)
 
         try:
             self.count_materials += 1
             self.count_materials_output[rare] += 1
-            if not requerst.json()['gatherEnd']:
-                return self.materials(number_material, rare)
+            if not request.json()['is_end']:
+                return self.materials(url_gather, id_room, rare)
 
             else:
                 rq.get("https://web.simple-mmo.com/travel", headers=base_headers)
-                return requerst.json()['type']
+                return request.json()['type']
 
         except Exception as e:
-            print(e)
+            print(e, "materials")
             return "Error"
 
     def quests(self):
