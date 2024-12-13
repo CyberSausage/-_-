@@ -1,9 +1,10 @@
 
 from All_Token import api_token
+from connect_to_db import DataBase
 
 main_headers = {
-            "cookie": "ваши куки из SMMO",
-            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36'
+            #"cookie": f"{DataBase().select(nameTable='Cookie')[0][0]}",
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
         }
 
 photo_headers = {**{'Accept': 'image/png'}, **main_headers}
@@ -25,7 +26,30 @@ header = {
 
 base_headers = {**header, **main_headers}
 
-base_headers_material = {**{"authorization": f"Bearer {api_token}"}, **main_headers}
+header_material_travel = {
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+    'Accept-Encoding': 'identity',
+    'Accept-Language': 'ru',
+    'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+    'Referer': 'https://web.simple-mmo.com/travel?new_page=true',
+    'sec-ch-ua': '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
+    'sec-ch-ua-arch': '"x86"',
+    'sec-ch-ua-bitness': '"64"',
+    'sec-ch-ua-full-version': '"131.0.6778.108"',
+    'sec-ch-ua-full-version-list': '"Google Chrome";v="131.0.6778.108", "Chromium";v="131.0.6778.108", "Not_A Brand";v="24.0.0.0"',
+    'sec-ch-ua-mobile': '?0',
+    'sec-ch-ua-platform': '"Linux"',
+    'sec-fetch-user': '?1',
+    'sec-ch-ua-model': '""',
+    'cache-control': 'max-age=0',
+    'sec-fetch-dest': 'document',
+    'sec-fetch-mode': 'navigate',
+    'sec-fetch-site': 'same-origin',
+}
+
+base_headers_material_travel = {**header_material_travel, **main_headers}
+
+base_headers_material = {**{"authorization": f"Bearer {DataBase().select(columns='api_token', nameTable='All_Token')[0][0]}"}, **main_headers}
 
 header_for_token = {
     "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",

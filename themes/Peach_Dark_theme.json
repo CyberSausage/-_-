@@ -1,0 +1,17 @@
+{
+   "theme_name" : "Grey Dark",
+    "app_color" : {
+        "fg_table_frame" : "#121212",
+        "fg_table_separator" : "#212121",
+        "text_color" : "#FF6347",
+        "dark_four" : "#272c36",
+        "fg_btn_table" : "#000000",
+        "fg_hover_btn_table" : "#1f1e1e",
+        "fg_checkbox" : "#000000",
+        "border_color_checkbox" : "#FF6347",
+        "hover_color_checkbox" : "#212121",
+        "placeholder_color_input" : "#b34a37",
+        "fg_color_input": "#000000",
+        "border_color_input" : "#FF6347"
+    }
+}
